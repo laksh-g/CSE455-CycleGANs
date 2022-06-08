@@ -1,27 +1,50 @@
 import tensorflow as tf
 from tensorflow import keras
+import os
 
 
 class CGan(keras.Model):
-    def __init__(self, monet_generator, photo_generator, monet_discriminator, photo_discriminator, lambda_cycle=10):
+    def __init__(self, monet_generator, photo_generator, monet_discriminator, photo_discriminator, dataset, epochs, steps_per_ep, lambda_cycle=10):
         super(CGan, self).__init__()
         self.m_gen = monet_generator
         self.p_gen = photo_generator
         self.m_disc = monet_discriminator
         self.p_disc = photo_discriminator
         self.lambda_cycle = lambda_cycle
+        self.dataset = dataset
+        self.epochs = epochs
+        self.steps_per_epoch = steps_per_ep
+        self.version = 1.5
 
-    def compile(self, m_gen_optimizer, p_gen_optimizer, m_disc_optimizer, p_disc_optimizer, gen_loss_fn, disc_loss_fn,
-            cycle_loss_fn, identity_loss_fn):
+    def compile(self):
         super(CGan, self).compile()
-        self.m_gen_optimizer = m_gen_optimizer
-        self.p_gen_optimizer = p_gen_optimizer
-        self.m_disc_optimizer = m_disc_optimizer
-        self.p_disc_optimizer = p_disc_optimizer
-        self.gen_loss_fn = gen_loss_fn
-        self.disc_loss_fn = disc_loss_fn
-        self.cycle_loss_fn = cycle_loss_fn
-        self.identity_loss_fn = identity_loss_fn
+        self.m_gen_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+        self.p_gen_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+        self.m_disc_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+        self.p_disc_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+        self.gen_loss_fn = self.generator_loss
+        self.disc_loss_fn = self.discriminator_loss
+        self.cycle_loss_fn = self.calc_cycle_loss
+        self.identity_loss_fn = self.identity_loss
+
+    def discriminator_loss(self, real, generated):
+        real_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)(tf.ones_like(real), real)
+        generated_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)(tf.zeros_like(generated), generated)
+        total_disc_loss = real_loss + generated_loss
+        return total_disc_loss * 0.5
+
+    def generator_loss(self, generated):
+        return tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)(tf.ones_like(generated), generated)
+
+    def calc_cycle_loss(self, real_image, cycled_image, LAMBDA):
+        loss1 = tf.reduce_mean(tf.abs(real_image - cycled_image))
+
+        return LAMBDA * loss1
+
+    def identity_loss(self, real_image, same_image, LAMBDA):
+        loss = tf.reduce_mean(tf.abs(real_image - same_image))
+        return LAMBDA * 0.5 * loss
+
 
     def train_step(self, batch_data):
         real_monet, real_photo = batch_data
@@ -95,3 +118,25 @@ class CGan(keras.Model):
             "monet_disc_loss": monet_disc_loss,
             "photo_disc_loss": photo_disc_loss
         }
+
+    def fit_model(self):
+        self.fit(
+            self.dataset,
+            epochs=self.epochs,
+            callbacks=[self.checkpoint()],
+            steps_per_epoch=self.steps_per_epoch,
+        )
+
+    def checkpoint(self):
+        checkpoint_path = f'training_checkpoints/v{self.version}/cp.ckpt'
+        checkpoint_dir = os.path.dirname(checkpoint_path)
+
+        latest = tf.train.latest_checkpoint(f'training_checkpoints\\v1.4')
+        self.load_weights(latest)
+        print("model restored")
+
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_path,
+            verbose=1,
+            save_weights_only=True)
+        return cp_callback

@@ -5,7 +5,7 @@ import tensorflow_addons as tfa
 import matplotlib.pyplot as plt
 import numpy as np
 import re
-from CycleGAN import CycleGan
+from CGAN import CGan
 import PIL
 import os
 
@@ -128,16 +128,6 @@ def get_gan_dataset(monet_files, photo_files, augment=None, repeat=True, shuffle
 
 full_dataset = get_gan_dataset(MONET_FILENAMES, PHOTO_FILENAMES, augment=data_augment, repeat=True, shuffle=True, batch_size=BATCH_SIZE)
 
-example_monet , example_photo = next(iter(full_dataset))
-#
-# plt.subplot(121)
-# plt.title('Photo')
-# plt.imshow(example_photo[0] * 0.5 + 0.5)
-#
-# plt.subplot(122)
-# plt.title('Monet')
-# plt.imshow(example_monet[0] * 0.5 + 0.5)
-# plt.show()
 
 OUTPUT_CHANNELS = 3
 
@@ -277,78 +267,11 @@ with strategy.scope():
 # plt.show()
 
 with strategy.scope():
-    def discriminator_loss(real, generated):
-        real_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)(tf.ones_like(real), real)
-
-        generated_loss = tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)(tf.zeros_like(generated), generated)
-
-        total_disc_loss = real_loss + generated_loss
-
-        return total_disc_loss * 0.5
-
-with strategy.scope():
-    def generator_loss(generated):
-        return tf.keras.losses.BinaryCrossentropy(from_logits=True,
-                                                  reduction=tf.keras.losses.Reduction.NONE)(tf.ones_like(generated), generated)
-
-
-with strategy.scope():
-    def calc_cycle_loss(real_image, cycled_image, LAMBDA):
-        loss1 = tf.reduce_mean(tf.abs(real_image - cycled_image))
-
-        return LAMBDA * loss1
-
-with strategy.scope():
-    def identity_loss(real_image, same_image, LAMBDA):
-        loss = tf.reduce_mean(tf.abs(real_image - same_image))
-        return LAMBDA * 0.5 * loss
-
-with strategy.scope():
-    monet_generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-    photo_generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-
-    monet_discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-    photo_discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-
-with strategy.scope():
-    cycle_gan_model = CycleGan(
-        monet_generator, photo_generator, monet_discriminator, photo_discriminator
+    cycle_gan_model = CGan(
+        monet_generator, photo_generator, monet_discriminator, photo_discriminator, full_dataset,
+        EPOCHS_NUM, (max(n_monet_samples, n_photo_samples)//BATCH_SIZE)
     )
-
-    cycle_gan_model.compile(
-        m_gen_optimizer = monet_generator_optimizer,
-        p_gen_optimizer = photo_generator_optimizer,
-        m_disc_optimizer = monet_discriminator_optimizer,
-        p_disc_optimizer = photo_discriminator_optimizer,
-        gen_loss_fn = generator_loss,
-        disc_loss_fn = discriminator_loss,
-        cycle_loss_fn = calc_cycle_loss,
-        identity_loss_fn = identity_loss
-    )
-
-version = 1.5
-checkpoint_path = f'training_checkpoints/v{version}/cp.ckpt'
-checkpoint_dir = os.path.dirname(checkpoint_path)
-
-latest = tf.train.latest_checkpoint(f'training_checkpoints\\v1.4')
-cycle_gan_model.load_weights(latest)
-print("model restored")
-
-cp_callback = tf.keras.callbacks.ModelCheckpoint(
-    filepath=checkpoint_path,
-    verbose=1,
-    save_weights_only=True)
-##### TODO:EROOROOROROROROOROROROROROROROROROROROROROOR
-#cycle_gan_model.save_weights(checkpoint_path.format(epoch=0))
-
-
-def fit_model():
-    cycle_gan_model.fit(
-        full_dataset,
-        epochs=EPOCHS_NUM,
-        callbacks=[cp_callback],
-        steps_per_epoch=(max(n_monet_samples, n_photo_samples)//BATCH_SIZE),
-    )
+    cycle_gan_model.compile()
 
 
 
@@ -366,6 +289,6 @@ def predict_and_save(input_ds, generator_model, output_path):
 
 
 if __name__ == "__main__":
-    fit_model()
-    monet_generator.save(f"training_checkpoints\\models\\model_{version}")
+    cycle_gan_model.fit_model()
+    monet_generator.save(f"training_checkpoints\\models\\model_{cycle_gan_model.version}")
     predict_and_save(load_dataset(PHOTO_FILENAMES).batch(1), monet_generator, "Results\\")
