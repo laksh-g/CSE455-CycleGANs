@@ -126,8 +126,6 @@ def get_gan_dataset(monet_files, photo_files, augment=None, repeat=True, shuffle
 
     return gan_ds
 
-full_dataset = get_gan_dataset(MONET_FILENAMES, PHOTO_FILENAMES, augment=data_augment, repeat=True, shuffle=True, batch_size=BATCH_SIZE)
-
 
 OUTPUT_CHANNELS = 3
 
@@ -265,6 +263,7 @@ with strategy.scope():
 # plt.title("Monet-esque Photo")
 # plt.imshow(to_monet[0] * 0.5 + 0.5)
 # plt.show()
+full_dataset = get_gan_dataset(MONET_FILENAMES, PHOTO_FILENAMES, augment=data_augment, repeat=True, shuffle=True, batch_size=BATCH_SIZE)
 
 with strategy.scope():
     cycle_gan_model = CGan(

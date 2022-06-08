@@ -38,13 +38,11 @@ class CGan(keras.Model):
 
     def calc_cycle_loss(self, real_image, cycled_image, LAMBDA):
         loss1 = tf.reduce_mean(tf.abs(real_image - cycled_image))
-
         return LAMBDA * loss1
 
     def identity_loss(self, real_image, same_image, LAMBDA):
         loss = tf.reduce_mean(tf.abs(real_image - same_image))
         return LAMBDA * 0.5 * loss
-
 
     def train_step(self, batch_data):
         real_monet, real_photo = batch_data
@@ -89,28 +87,12 @@ class CGan(keras.Model):
             photo_disc_loss = self.disc_loss_fn(disc_real_photo, disc_fake_photo)
 
         # Calculate the gradients for generator and discriminator
-        monet_generator_gradients = tape.gradient(total_monet_gen_loss,
-                                                  self.m_gen.trainable_variables)
-        photo_generator_gradients = tape.gradient(total_photo_gen_loss,
-                                                  self.p_gen.trainable_variables)
-
-        monet_discriminator_gradients = tape.gradient(monet_disc_loss,
-                                                      self.m_disc.trainable_variables)
-        photo_discriminator_gradients = tape.gradient(photo_disc_loss,
-                                                      self.p_disc.trainable_variables)
+        m_gen_grads, p_gen_grads, m_disc_grads, p_disc_grads = self.calc_grads(tape, total_monet_gen_loss,
+                                                                               total_photo_gen_loss, monet_disc_loss,
+                                                                               photo_disc_loss)
 
         # Apply the gradients to the optimizer
-        self.m_gen_optimizer.apply_gradients(zip(monet_generator_gradients,
-                                                 self.m_gen.trainable_variables))
-
-        self.p_gen_optimizer.apply_gradients(zip(photo_generator_gradients,
-                                                 self.p_gen.trainable_variables))
-
-        self.m_disc_optimizer.apply_gradients(zip(monet_discriminator_gradients,
-                                                  self.m_disc.trainable_variables))
-
-        self.p_disc_optimizer.apply_gradients(zip(photo_discriminator_gradients,
-                                                  self.p_disc.trainable_variables))
+        self.apply_grads(m_gen_grads, p_gen_grads, m_disc_grads, p_disc_grads)
 
         return {
             "monet_gen_loss": total_monet_gen_loss,
@@ -118,6 +100,21 @@ class CGan(keras.Model):
             "monet_disc_loss": monet_disc_loss,
             "photo_disc_loss": photo_disc_loss
         }
+
+    def calc_grads(self, tape, m_gen_loss, p_gen_loss, m_disc_loss, p_disc_loss):
+        m_gen_grads = tape.gradient(m_gen_loss, self.m_gen.trainable_variables)
+        p_gen_grads = tape.gradient(p_gen_loss, self.p_gen.trainable_variables)
+
+        m_disc_grads = tape.gradient(m_disc_loss, self.m_disc.trainable_variables)
+        p_disc_grads = tape.gradient(p_disc_loss, self.p_disc.trainable_variables)
+
+        return m_gen_grads, p_gen_grads, m_disc_grads, p_disc_grads
+
+    def apply_grads(self, m_gen_grads, p_gen_grads, m_disc_grads, p_disc_grads):
+        self.m_gen_optimizer.apply_gradients(zip(m_gen_grads, self.m_gen.trainable_variables))
+        self.p_gen_optimizer.apply_gradients(zip(p_gen_grads, self.p_gen.trainable_variables))
+        self.m_disc_optimizer.apply_gradients(zip(m_disc_grads, self.m_disc.trainable_variables))
+        self.p_disc_optimizer.apply_gradients(zip(p_disc_grads, self.p_disc.trainable_variables))
 
     def fit_model(self):
         self.fit(
