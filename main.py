@@ -22,14 +22,15 @@ print('Number of replicas:', strategy.num_replicas_in_sync)
 AUTO = tf.data.experimental.AUTOTUNE
 print(tf.__version__)
 
-GCS_PATH_MONET = 'C:\\Users\\laksh\\Desktop\\UW\\Computer_Vision\\git_test\\data\\monet_tfrec'
-GCS_PATH = 'C:\\Users\\laksh\\Desktop\\UW\\Computer_Vision\\git_test\\data'
+PATH_MONET = 'C:\\Users\\laksh\\Desktop\\UW\\Computer_Vision\\git_test\\data\\monet_tfrec'
+DARA_PATH = 'C:\\Users\\laksh\\Desktop\\UW\\Computer_Vision\\git_test\\data'
 
-MONET_FILENAMES = tf.io.gfile.glob(str(GCS_PATH + '/monet_tfrec/*.tfrec'))
+MONET_FILENAMES = tf.io.gfile.glob(str(DARA_PATH + '/monet_tfrec/*.tfrec'))
 print('Monet TFRecord Files:', len(MONET_FILENAMES))
 
-PHOTO_FILENAMES = tf.io.gfile.glob(str(GCS_PATH + '/photo_tfrec/*.tfrec'))
+PHOTO_FILENAMES = tf.io.gfile.glob(str(DARA_PATH + '/photo_tfrec/*.tfrec'))
 print('Photo TFRecord Files:', len(PHOTO_FILENAMES))
+
 
 def count_data_items(filenames):
     n = [int(re.compile(r"-([0-9]*)\.").search(filename).group(1)) for filename in filenames]
@@ -49,6 +50,7 @@ print(f"Batch_size: {BATCH_SIZE}")
 print(f"Epochs number: {EPOCHS_NUM}")
 
 IMAGE_SIZE = [256, 256]
+OUTPUT_CHANNELS = 3
 
 def decode_image(image):
     image = tf.image.decode_jpeg(image, channels=3)
@@ -125,9 +127,6 @@ def get_gan_dataset(monet_files, photo_files, augment=None, repeat=True, shuffle
     gan_ds = tf.data.Dataset.zip((monet_ds, photo_ds))
 
     return gan_ds
-
-
-OUTPUT_CHANNELS = 3
 
 
 def downsample(filters, size, apply_instancenorm=True):
@@ -245,33 +244,24 @@ def Discriminator():
 
     return tf.keras.Model(inputs=inp, outputs=last)
 
-
-with strategy.scope():
-    monet_generator = Generator() # transforms photos to Monet-esque paintings
-    photo_generator = Generator() # transforms Monet paintings to be more like photos
-
-    monet_discriminator = Discriminator() # differentiates real Monet paintings and generated Monet paintings
-    photo_discriminator = Discriminator() # differentiates real photos and generated photos
-
-# to_monet = monet_generator(example_photo)
-#
-# plt.subplot(1, 2, 1)
-# plt.title("Original Photo")
-# plt.imshow(example_photo[0] * 0.5 + 0.5)
-#
-# plt.subplot(1, 2, 2)
-# plt.title("Monet-esque Photo")
-# plt.imshow(to_monet[0] * 0.5 + 0.5)
-# plt.show()
 full_dataset = get_gan_dataset(MONET_FILENAMES, PHOTO_FILENAMES, augment=data_augment, repeat=True, shuffle=True, batch_size=BATCH_SIZE)
 
+# DEFINE GENERATORS AND DISCRIMINATORS
+with strategy.scope():
+    monet_generator = Generator()
+    photo_generator = Generator()
+
+    monet_discriminator = Discriminator()
+    photo_discriminator = Discriminator()
+
+
+# DEFINE AND COMPILE CYCLE GAN MODEL
 with strategy.scope():
     cycle_gan_model = CGan(
         monet_generator, photo_generator, monet_discriminator, photo_discriminator, full_dataset,
         EPOCHS_NUM, (max(n_monet_samples, n_photo_samples)//BATCH_SIZE)
     )
     cycle_gan_model.compile()
-
 
 
 def predict_and_save(input_ds, generator_model, output_path):
