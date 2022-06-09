@@ -23,3 +23,6 @@ For our approach we used the dataset from Kaggle's : I’m Something of a Painte
  - Epoch 4 : monet_gen_loss: 2.7849 - photo_gen_loss: 2.8058 - monet_disc_loss: 0.6284 - photo_disc_loss: 0.5973
  - Epoch 5 : monet_gen_loss: 2.5382 - photo_gen_loss: 2.6347 - monet_disc_loss: 0.6032 - photo_disc_loss: 0.6083
  - Epoch 6 : monet_gen_loss: 2.4919 - photo_gen_loss: 2.5578 - monet_disc_loss: 0.6163 - photo_disc_loss: 0.6047
+
+## Video
+[![Demo Video](https://img.youtube.com/vi/RI8qSyGP864/0.jpg)](https://youtu.be/RI8qSyGP864)
