@@ -11,4 +11,6 @@ While researching on this topic we looked at a lot of previous work done around 
 CycleGANs are a type of GAN architechture that involves the automatic training of image-to-image translation models without paired examples. The models are trained in an unsupervised manner using a collection of images from the source and target domain that do not need to be related in any way. For our project we would be putting the real images through our network to create a Fake Monet image and then re feeding it in the reverse order to try and get the original image back. We then uses these two Real(ish) images to calculate our losses and train the network.
 
 ## Approach
+
+## Dataset
 For our approach we used the dataset from Kaggle's : I’m Something of a Painter Myself Competition which has a collection of 300 Monet images and over 7000 real images. Our networks were made in TensorFlow using Keras models. 
