@@ -26,3 +26,7 @@ For our approach we used the dataset from Kaggle's : I’m Something of a Painte
 
 ## Video
 [![Demo Video](https://img.youtube.com/vi/RI8qSyGP864/0.jpg)](https://youtu.be/RI8qSyGP864)
+
+## Presentation
+https://docs.google.com/presentation/d/1w4oLIag3NXQzoHTgMCSeGJepoC8b0b8ABqd699oeiXk/edit?usp=sharing
+
