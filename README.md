@@ -11,6 +11,26 @@ While researching on this topic we looked at a lot of previous work done around 
 CycleGANs are a type of GAN architecture that involves the automatic training of image-to-image translation models without paired examples. The models are trained in an unsupervised manner using a collection of images from the source and target domain that do not need to be related in any way. For our project we would be putting the real images through our network to create a Fake Monet image and then re feeding it in the reverse order to try and get the original image back. We then uses these two Real(ish) images to calculate our losses and train the network.
 
 ## Approach
+### Discriminator
+We had two discriminators: Photo and Monet
+ - Architecture: Downsample from 256x256x3 to 30x30x1 using multiple 2D convolutional layers
+ - Optimizer: Adam Optimizer with a learning rate=2e-4 and beta=0.5
+ - Activation: Leaky ReLU after every layer
+### Generator
+We had two generators: Photo and Monet
+ - Architecture: 
+ - Encoder - Downsample from 256x256x3 to 1x1x512 using multiple 2D convolutional layers
+ - Decoder - Upsample from 1x1x512 to 256x256x3 using multiple 2D convolutional layers
+ - Optimizer: Adam Optimizer with a learning rate=2e-4 and beta=0.5
+ - Activation: Leaky ReLU after every layer
+
+### General framework
+PIL - Python Imaging Library
+Keras
+TensorFlow
+
+For more information refrer to slide 2 of [Demo Slides](https://docs.google.com/presentation/d/1w4oLIag3NXQzoHTgMCSeGJepoC8b0b8ABqd699oeiXk/edit?usp=sharing
+)
 
 ## Dataset
 For our approach we used the dataset from Kaggle's : I’m Something of a Painter Myself Competition which has a collection of 300 Monet images and over 7000 real images. Our networks were made in TensorFlow using Keras models. 
