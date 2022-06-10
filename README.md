@@ -26,13 +26,14 @@ We had two generators: Photo and Monet
 
 ### General framework
 PIL - Python Imaging Library
+
 Keras
+
 TensorFlow
 
-For more information refer to slide 2 of [Demo Slides](https://docs.google.com/presentation/d/1w4oLIag3NXQzoHTgMCSeGJepoC8b0b8ABqd699oeiXk/edit?usp=sharing
-)
 
-Additionally, we discuss our approach in detail in the video presentation.
+For more information refer to slide 2 of [Demo Slides](https://docs.google.com/presentation/d/1w4oLIag3NXQzoHTgMCSeGJepoC8b0b8ABqd699oeiXk/edit?usp=sharing
+). Additionally, we discuss our approach in detail in the video presentation.
 
 ## Dataset
 For our approach we used the dataset from Kaggle's : I’m Something of a Painter Myself Competition which has a collection of 300 Monet images and over 7000 real images. Our networks were made in TensorFlow using Keras models. 
