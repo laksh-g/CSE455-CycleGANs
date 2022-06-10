@@ -1,4 +1,5 @@
 # I’m Something of a Painter Myself
+### Authors : Laksh Gupta, Prithviraj Tarale
 
 ## Problem Description
 A GAN consists of at least two neural networks: a generator model and a discriminator model. The generator is a neural network that creates the images. For our project, we will be generating images in the style of Monet. This generator is trained using a discriminator.
